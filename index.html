@@ -58,7 +58,7 @@
         </textPath>
       </text>
 
-      <image id="x-img" href="a254c20c-50ee-42df-8de6-95c75bbdb695-removebg-preview.png" width="95" height="95" x="10" y="10" preserveAspectRatio="slice"></image>
+      <image id="x-img" href="a254c20c-50ee-42df-8de6-95c75bbdb695-removebg-preview.png" width="95" height="95" x="10" y="10" preserveAspectRatio="xMidYMid meet"></image>
     </svg>
 
     <div><img src="karakter.png" alt="Karakter Jester" class="karakter"></div>
@@ -77,58 +77,125 @@
   </footer>
 
   <script>
+  /* ---------------------------
+     Header height helper (dynamic)
+     --------------------------- */
+  function updateHeaderHeight() {
+    const nav = document.querySelector('.navbar');
+    if (!nav) return;
+    const h = Math.ceil(nav.getBoundingClientRect().height);
+    document.documentElement.style.setProperty('--header-height', h + 'px');
+  }
+
+  /* ---------------------------
+     placeXImageAndRotate (improved)
+     - uses fixed viewBox coordinates so results match desktop & mobile
+     - auto-scales icon if space is narrow
+     --------------------------- */
   function placeXImageAndRotate() {
     const svg = document.getElementById('svg-root');
-    const path = document.getElementById('curve-bottom');
+    if (!svg) return;
+    const path = svg.querySelector('#curve-bottom');
     const onTspan = svg.querySelector('.on');
     const afterTspan = svg.querySelector('.after');
-    const img = document.getElementById('x-img');
+    const img = svg.querySelector('#x-img');
     if (!path || !onTspan || !afterTspan || !img) return;
 
     try {
+      // compute boxes in SVG user-space
       const onBox = onTspan.getBBox();
       const afterBox = afterTspan.getBBox();
-      const padding = 6;
+
+      const padding = 8;
       const onEndX = onBox.x + onBox.width + padding;
       const afterStartX = afterBox.x - padding;
-      const centerX = (onEndX + afterStartX) / 2;
+      let centerX = (onEndX + afterStartX) / 2;
 
+      // find closest point on path (sampling)
       const totalLen = path.getTotalLength();
-      const steps = 240;
+      const samples = 360;
       let best = {d: Infinity, t: 0, pt: path.getPointAtLength(0)};
-      for (let i = 0; i <= steps; i++) {
-        const t = (i / steps) * totalLen;
-        const pos = path.getPointAtLength(t);
-        const diff = Math.abs(pos.x - centerX);
-        if (diff < best.d) best = {d: diff, t, pt: pos};
+      for (let i = 0; i <= samples; i++) {
+        const t = (i / samples) * totalLen;
+        const pt = path.getPointAtLength(t);
+        const diff = Math.abs(pt.x - centerX);
+        if (diff < best.d) best = {d: diff, t, pt};
       }
 
       const target = best.pt;
-      const delta = Math.max(0.5, totalLen / steps);
-      const p1 = path.getPointAtLength(Math.max(0, best.t - delta));
-      const p2 = path.getPointAtLength(Math.min(totalLen, best.t + delta));
+      const tAt = best.t;
+
+      // compute tangent for rotation
+      const delta = Math.max(0.5, totalLen / samples);
+      const p1 = path.getPointAtLength(Math.max(0, tAt - delta));
+      const p2 = path.getPointAtLength(Math.min(totalLen, tAt + delta));
       const dx = p2.x - p1.x;
       const dy = p2.y - p1.y;
       let angleDeg = Math.atan2(dy, dx) * 180 / Math.PI;
 
-      const imgW = Number(img.getAttribute('width')) || 44;
-      const imgH = Number(img.getAttribute('height')) || 44;
-      const imgX = target.x - imgW / 2;
-      const imgY = target.y - imgH / 2;
+      // image size (may be scaled down if space small)
+      let imgW = Number(img.getAttribute('width')) || img.getBBox().width;
+      let imgH = Number(img.getAttribute('height')) || img.getBBox().height;
+      const available = Math.max(8, afterStartX - onEndX);
+
+      // if icon wider than available, scale it down
+      if (imgW > available) {
+        const scale = Math.max(0.30, (available - 4) / imgW);
+        imgW = Math.max(8, Math.round(imgW * scale));
+        imgH = Math.max(8, Math.round(imgH * scale));
+        img.setAttribute('width', imgW);
+        img.setAttribute('height', imgH);
+      }
+
+      // fine tune vertical position (makes icon sit slightly above baseline)
+      const fineTuneY = -4;
+      let imgX = target.x - imgW / 2;
+      let imgY = target.y - imgH / 2 + fineTuneY;
+
+      // prevent overlap: nudge within [onEndX, afterStartX]
+      const leftLimit = onEndX + 2;
+      const rightLimit = afterStartX - 2;
+      if (imgX < leftLimit) imgX = leftLimit;
+      if (imgX + imgW > rightLimit) imgX = rightLimit - imgW;
+
       img.setAttribute('x', imgX);
       img.setAttribute('y', imgY);
-      const cx = imgX + imgW / 70;
+
+      const cx = imgX + imgW / 2;
       const cy = imgY + imgH / 2;
       img.setAttribute('transform', `rotate(${angleDeg}, ${cx}, ${cy})`);
-    } catch (e) { console.warn('SVG placement/rotation failed', e); }
+    } catch (err) {
+      console.warn('SVG placement error:', err);
+    }
   }
 
-  window.addEventListener('load', () => { placeXImageAndRotate(); setTimeout(placeXImageAndRotate, 250); });
-  window.addEventListener('resize', () => {
-    clearTimeout(window._placeXTimer);
-    window._placeXTimer = setTimeout(placeXImageAndRotate, 120);
+  /* run placement after fonts/layout ready */
+  function runPlacementSequence() {
+    updateHeaderHeight();
+    // do a few passes to stabilize
+    placeXImageAndRotate();
+    setTimeout(placeXImageAndRotate, 120);
+    setTimeout(placeXImageAndRotate, 300);
+  }
+
+  window.addEventListener('load', () => {
+    runPlacementSequence();
   });
 
+  window.addEventListener('resize', () => {
+    clearTimeout(window._placeTimer);
+    window._placeTimer = setTimeout(runPlacementSequence, 160);
+    clearTimeout(window._hdrTimer);
+    window._hdrTimer = setTimeout(updateHeaderHeight, 160);
+  });
+
+  window.addEventListener('orientationchange', () => {
+    setTimeout(runPlacementSequence, 200);
+  });
+
+  /* ---------------------------
+     Hamburger menu logic (calls placement & header update)
+     --------------------------- */
   (function () {
     const toggle = document.getElementById('menu-toggle');
     const mobileMenu = document.getElementById('mobile-menu');
@@ -139,24 +206,32 @@
       mobileMenu.classList.add('show');
       mobileMenu.setAttribute('aria-hidden', 'false');
       toggle.classList.add('active');
+      // update layout & placement after open animation
+      setTimeout(() => { updateHeaderHeight(); placeXImageAndRotate(); }, 220);
     }
+
     function closeMenu() {
       toggle.setAttribute('aria-expanded', 'false');
       mobileMenu.classList.remove('show');
       mobileMenu.setAttribute('aria-hidden', 'true');
       toggle.classList.remove('active');
+      setTimeout(() => { updateHeaderHeight(); placeXImageAndRotate(); }, 120);
     }
 
     toggle.addEventListener('click', (e) => {
       e.stopPropagation();
-      const isOpen = toggle.classList.contains('active');
-      if (isOpen) closeMenu(); else openMenu();
+      const open = toggle.classList.contains('active');
+      if (open) closeMenu(); else openMenu();
     });
 
+    // close if click outside
     document.addEventListener('click', (e) => {
-      if (!mobileMenu.contains(e.target) && !toggle.contains(e.target)) closeMenu();
+      if (!mobileMenu.contains(e.target) && !toggle.contains(e.target)) {
+        if (mobileMenu.classList.contains('show')) closeMenu();
+      }
     });
 
+    // keyboard: ESC closes
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
   })();
   </script>

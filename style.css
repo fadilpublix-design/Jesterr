@@ -34,9 +34,7 @@ body::before {
   justify-content: space-between;
   align-items: center;
   padding: 18px 40px;
-  background: rgba(0, 0, 0, 0.28);
   backdrop-filter: blur(8px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   z-index: 50;
 }
 
@@ -53,7 +51,7 @@ body::before {
   font-size: 24px;
   font-weight: 900;
   color: #ff3c00;
-  text-shadow: 0 0 12px rgba(255,60,0,0.55);
+  text-shadow: 0 0 12px rgb(255, 0, 0);
   margin-left: 10px;
 }
 
@@ -99,7 +97,7 @@ body::before {
   backdrop-filter: blur(4px);
   box-shadow: 0 0 10px rgba(0,0,0,0.5);
   z-index: 9999;
-  transition: background .25s ease, transform .25s ease;
+  transition: .25s ease, transform .25s ease;
 }
 .menu-toggle:hover { background: rgba(255,255,255,0.18); transform: scale(1.08); }
 .menu-toggle:active { transform: scale(0.95); }
@@ -215,7 +213,7 @@ body::before {
   text-align: center;
   backdrop-filter: blur(6px);
   background: rgba(0,0,0,0.32);
-  border-top: 1px solid rgba(255,255,255,0.06);
+  border-top: 1px solid rgba(255, 0, 0, 0.06);
 }
 .footer-title { color: #ff8400; font-weight: 900; font-size: 24px; text-shadow: 0 0 8px rgba(255,132,0,0.45); }
 .footer-links { color: #9500ff; font-weight: 700; margin: 6px 0; text-shadow: 0 0 6px rgba(149,0,255,0.35); }
