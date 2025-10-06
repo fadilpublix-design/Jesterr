@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>$Jester — XRP Meme Project</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="navbar">
+    <div class="nav-left">
+      <img src="karakter.png" alt="Jester Logo" class="logo">
+      <span class="brand">$JESTER</span>
+    </div>
+
+    <nav class="nav-center" role="navigation" aria-label="Main">
+      <a href="#about">{ABOUT}</a>
+      <a href="#memes">{MEMES}</a>
+      <a href="#members">{MEMBERS}</a>
+      <a href="#learn">{LEARN}</a>
+    </nav>
+
+    <div class="nav-right">
+      <a href="#"><img src="first ledger.png" alt="logo 1" class="nav-logo"></a>
+      <a href="#"><img src="telegram.png" alt="Logo 2" class="nav-logo"></a>
+      <a href="#"><img src="xrp.cafe.png" alt="Logo 3" class="nav-logo"></a>
+      <a href="#"><img src="logo-xcom-640x640-removebg-preview (1).png" alt="Logo 4" class="nav-logo"></a>
+
+      <button id="menu-toggle" class="menu-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+      </button>
+    </div>
+
+    <div id="mobile-menu" class="mobile-menu" role="menu" aria-hidden="true">
+      <a href="#about" role="menuitem">{ABOUT}</a>
+      <a href="#memes" role="menuitem">{MEMES}</a>
+      <a href="#members" role="menuitem">{MEMBERS}</a>
+      <a href="#learn" role="menuitem">{LEARN}</a>
+    </div>
+  </header>
+
+  <main class="hero">
+    <svg id="svg-root" viewBox="0 0 860 300" class="curved-text" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+      <path id="curve-top" d="M 90 180 Q 430 20 770 180" fill="transparent" />
+      <text>
+        <textPath xlink:href="#curve-top" startOffset="50%" text-anchor="middle" class="main-text">JESTER</textPath>
+      </text>
+
+      <path id="curve-bottom" d="M 200 220 Q 400 100 660 220" fill="transparent" />
+      <text>
+        <textPath xlink:href="#curve-bottom" startOffset="50%" text-anchor="middle" class="subtext" id="subtext-path">
+          <tspan class="on" dy="5" letter-spacing="5">ON</tspan>
+          <tspan class="spacer" dx="15"></tspan>
+          <tspan class="after" dx="90" letter-spacing="5" baseline-shift="7%">XRP LEDGER</tspan>
+        </textPath>
+      </text>
+
+      <image id="x-img" href="a254c20c-50ee-42df-8de6-95c75bbdb695-removebg-preview.png" width="95" height="95" x="10" y="10" preserveAspectRatio="slice"></image>
+    </svg>
+
+    <div><img src="karakter.png" alt="Karakter Jester" class="karakter"></div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-title">$Jester</div>
+      <nav class="footer-links" aria-label="Footer links">
+        <a href="#terms" class="footer-link">TERMS OF USE</a>
+        <span class="dot">·</span>
+        <a href="#privacy" class="footer-link">PRIVACY POLICY</a>
+      </nav>
+      <div class="footer-copy">© 2025 Jester — All Rights Reserved</div>
+    </div>
+  </footer>
+
+  <script>
+  function placeXImageAndRotate() {
+    const svg = document.getElementById('svg-root');
+    const path = document.getElementById('curve-bottom');
+    const onTspan = svg.querySelector('.on');
+    const afterTspan = svg.querySelector('.after');
+    const img = document.getElementById('x-img');
+    if (!path || !onTspan || !afterTspan || !img) return;
+
+    try {
+      const onBox = onTspan.getBBox();
+      const afterBox = afterTspan.getBBox();
+      const padding = 6;
+      const onEndX = onBox.x + onBox.width + padding;
+      const afterStartX = afterBox.x - padding;
+      const centerX = (onEndX + afterStartX) / 2;
+
+      const totalLen = path.getTotalLength();
+      const steps = 240;
+      let best = {d: Infinity, t: 0, pt: path.getPointAtLength(0)};
+      for (let i = 0; i <= steps; i++) {
+        const t = (i / steps) * totalLen;
+        const pos = path.getPointAtLength(t);
+        const diff = Math.abs(pos.x - centerX);
+        if (diff < best.d) best = {d: diff, t, pt: pos};
+      }
+
+      const target = best.pt;
+      const delta = Math.max(0.5, totalLen / steps);
+      const p1 = path.getPointAtLength(Math.max(0, best.t - delta));
+      const p2 = path.getPointAtLength(Math.min(totalLen, best.t + delta));
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      let angleDeg = Math.atan2(dy, dx) * 180 / Math.PI;
+
+      const imgW = Number(img.getAttribute('width')) || 44;
+      const imgH = Number(img.getAttribute('height')) || 44;
+      const imgX = target.x - imgW / 2;
+      const imgY = target.y - imgH / 2;
+      img.setAttribute('x', imgX);
+      img.setAttribute('y', imgY);
+      const cx = imgX + imgW / 70;
+      const cy = imgY + imgH / 2;
+      img.setAttribute('transform', `rotate(${angleDeg}, ${cx}, ${cy})`);
+    } catch (e) { console.warn('SVG placement/rotation failed', e); }
+  }
+
+  window.addEventListener('load', () => { placeXImageAndRotate(); setTimeout(placeXImageAndRotate, 250); });
+  window.addEventListener('resize', () => {
+    clearTimeout(window._placeXTimer);
+    window._placeXTimer = setTimeout(placeXImageAndRotate, 120);
+  });
+
+  (function () {
+    const toggle = document.getElementById('menu-toggle');
+    const mobileMenu = document.getElementById('mobile-menu');
+    if (!toggle || !mobileMenu) return;
+
+    function openMenu() {
+      toggle.setAttribute('aria-expanded', 'true');
+      mobileMenu.classList.add('show');
+      mobileMenu.setAttribute('aria-hidden', 'false');
+      toggle.classList.add('active');
+    }
+    function closeMenu() {
+      toggle.setAttribute('aria-expanded', 'false');
+      mobileMenu.classList.remove('show');
+      mobileMenu.setAttribute('aria-hidden', 'true');
+      toggle.classList.remove('active');
+    }
+
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = toggle.classList.contains('active');
+      if (isOpen) closeMenu(); else openMenu();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!mobileMenu.contains(e.target) && !toggle.contains(e.target)) closeMenu();
+    });
+
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
+  })();
+  </script>
+</body>
+</html>
